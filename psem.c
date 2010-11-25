@@ -1,16 +1,12 @@
+#include <stdlib.h>
 #include <pthread.h>
 #include <errno.h>
 #include "psem.h"
 
-struct psem_s {
-	pthread_mutex_t lock;
-	pthread_cond_t condvar;
-	int counter;
-};
-
 void sem_init(psem_t *semaphore, int value) {
-	semaphore->lock = PTHREAD_MUTEX_INITIALIZER;
-	semaphore->condvar = PTHREAD_COND_INITIALIZER;
+	//FIXME error checking (........)
+	pthread_mutex_init(&semaphore->lock, NULL);
+	pthread_cond_init(&semaphore->condvar, NULL); 
 	semaphore->counter = value;
 }
 
@@ -31,15 +27,15 @@ void sem_free(psem_t *semaphore) {
 
 void sem_up(psem_t *semaphore) {
 	pthread_mutex_lock(&semaphore->lock);
-	if(semaphore->++counter <= 0) {
+	if(++(semaphore->counter) <= 0) {
 		pthread_cond_signal(&semaphore->condvar);
 	}
-	pthread_mutex_unlock(semaphore->lock);
+	pthread_mutex_unlock(&semaphore->lock);
 }
 
 void sem_down(psem_t *semaphore) {
 	pthread_mutex_lock(&semaphore->lock);
-	if(semaphore->--counter < 0) {
+	if(--(semaphore->counter) < 0) {
 		pthread_cond_wait(&semaphore->condvar, &semaphore->lock); 
 	}
 	pthread_mutex_unlock(&semaphore->lock);
