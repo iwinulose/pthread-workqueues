@@ -18,7 +18,7 @@ sem_test: psem.o sem_test.o
 sem_test.o: sem_test.c
 queue_test: queue_test.o dequeue.o
 queue_test.o: queue_test.c
-wq_test: LDFLAGS += -L. -lpthread_wq_np
+wq_test: LDFLAGS += -L. -ldl -lpthread_wq_np
 wq_test: wq_test.o 
 wq_test.o: wq_test.c
 
