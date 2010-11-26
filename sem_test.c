@@ -14,15 +14,15 @@ void * run(void *arg) {
 	while(1) {
 		sleep(1);
 		printf("Thread %u going into mutex\n", id);
-		sem_down(&_mutex);
+		psem_down(&_mutex);
 		printf("Hello from thread %u!\n", id);
 		sleep(3);
-		sem_up(&_mutex);
+		psem_up(&_mutex);
 	}
 }
 
 int main(void) {
-	sem_init(&_mutex, 1);
+	psem_init(&_mutex, 1);
 	for(int i = 0; i < 5; i++) {
 		pthread_t id;
 		pthread_create(&id, NULL, run, NULL);

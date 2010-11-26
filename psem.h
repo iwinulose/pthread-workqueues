@@ -5,9 +5,9 @@ typedef struct psem_s {
 	int counter;
 } psem_t;
 
-void sem_init(psem_t *, int);
-psem_t *sem_new(int);
-void sem_free(psem_t *);
-void sem_up(psem_t *);
-void sem_down(psem_t *);
+void psem_init(psem_t *, int);
+psem_t *psem_new(int);
+void psem_free(psem_t *);
+void psem_up(psem_t *);
+void psem_down(psem_t *);
 
