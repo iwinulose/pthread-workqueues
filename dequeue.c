@@ -162,10 +162,10 @@ void dequeue_free(dequeue_t *list) {
 	}
 }
 
-static void _destroy_node(void *context, list_node_t *node) {
+/*static void _destroy_node(void *context, list_node_t *node) {
 	(void) context;
 	free(node);
-}
+}*/
 
 //List utilities
 
