@@ -11,6 +11,22 @@ typedef struct pthread_workqueue_s pthread_workqueue_t;
 typedef struct pthread_workqueue_attr_s pthread_workqueue_attr_t; 
 typedef struct pthread_workitem_handle_s pthread_workitem_handle_t;
 
+struct pthread_workqueue_attr_s {
+	unsigned int sig;
+	int overcommit;
+	int priority;
+};
+
+struct pthread_workqueue_s {
+	unsigned int sig;
+	pthread_workqueue_attr_t attr;
+};
+
+struct pthread_workitem_handle_s {
+	pthread_workqueue_t workq;
+	void *(*func)(void *);
+	void *arg;
+};
 /*
 	Initializes the workqueue system. Need only be called once per application. After the first successful invocation, subsequent invocations have no effect and will always succeed.
 	
