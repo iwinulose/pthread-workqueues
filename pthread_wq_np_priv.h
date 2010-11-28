@@ -4,9 +4,9 @@
 #error "Please include pthread_wq_np.h"
 #else
 
-typedef void *(*workitem_f)(void*);
+#define NUM_JOB_QUEUES 3
 
-
+typedef void * (*workitem_f)(void*);
 
 #define PTHREAD_WORKQUEUE_T_SIG 0xffefa231
 #define PTHREAD_WORKQUEUE_ATTR_T_SIG 0xef0c1f2f

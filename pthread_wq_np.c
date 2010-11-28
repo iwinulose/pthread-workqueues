@@ -11,12 +11,9 @@
 
 static volatile int _wq_configured = 0;
 static pthread_mutex_t _init_mutex = PTHREAD_MUTEX_INITIALIZER;
-
+static dequeue_t * _job_queues[NUM_JOB_QUEUES];
 static pthread_mutex_t _job_queue_mutex = PTHREAD_MUTEX_INITIALIZER;
 static psem_t _job_semaphore;
-static dequeue_t *_high_prio_job_queue = NULL;
-static dequeue_t *_default_prio_job_queue = NULL;
-static dequeue_t *_low_prio_job_queue = NULL;
 
 #define IS_VALID_QUEUE_PRIORITY(x) (((x) == WORKQ_HIGH_PRIOQUEUE) || ((x) == WORKQ_DEFAULT_PRIOQUEUE) || ((x) == WORKQ_LOW_PRIOQUEUE))
 
@@ -61,22 +58,7 @@ static int _is_valid_workqueue(pthread_workqueue_t *workqueue) {
 }
 
 static dequeue_t * _queue_for_priority(int priority) {
-	dequeue_t *queue;
-	switch(priority) {
-		case WORKQ_HIGH_PRIOQUEUE:
-			queue = _high_prio_job_queue;
-			break;
-		case WORKQ_DEFAULT_PRIOQUEUE:
-			queue = _default_prio_job_queue;
-			break;
-		case WORKQ_LOW_PRIOQUEUE:
-			queue = _low_prio_job_queue;
-			break;
-		default:
-			queue = NULL;
-			break;
-	}
-	return queue;
+	return IS_VALID_QUEUE_PRIORITY(priority) ? _job_queues[priority] : NULL;
 }
 
 static void * _workqueue_worker(void *arg) {
@@ -86,19 +68,12 @@ static void * _workqueue_worker(void *arg) {
 		psem_down(&_job_semaphore);
 		pthread_workitem_handle_t *job = NULL;
 		pthread_mutex_lock(&_job_queue_mutex);
-		job = dequeue_pop(_high_prio_job_queue);
-		if(job != NULL) {
-			goto worker_unlock;
+		for(int i = 0; i < NUM_JOB_QUEUES; i++) {
+			job = dequeue_pop(_job_queues[i]);
+			if(job != NULL) {
+				break;
+			}
 		}
-		job = dequeue_pop(_default_prio_job_queue);
-		if(job != NULL) {
-			goto worker_unlock;
-		}
-		job = dequeue_pop(_high_prio_job_queue);
-		if(job != NULL) {
-			goto worker_unlock;
-		}
-worker_unlock:
 		pthread_mutex_unlock(&_job_queue_mutex);
 		if(job != NULL) {
 			workitem_f func = job->func;
@@ -110,37 +85,51 @@ worker_unlock:
 	return NULL;
 }
 
-static void _free_workqueues(void) {
-	dequeue_free(_high_prio_job_queue);
-	dequeue_free(_default_prio_job_queue);
-	dequeue_free(_low_prio_job_queue);
+
+static void _free_job_queues(void) {
+	dequeue_t * queue = NULL;
+	for(int i = 0; i < NUM_JOB_QUEUES; i++) {
+		queue = _job_queues[i];
+		if(queue != NULL) {
+			free(queue);
+		}
+	}
+}
+
+static int _init_job_queues(void) {
+	//FIXME: currently dequeues are asserted to not fail due to lack of memory.
+	for(int i = 0; i < NUM_JOB_QUEUES; i++) {
+		if((_job_queues[i] = dequeue_new()) == NULL) {
+			_free_job_queues();
+			return 1;
+		}
+	}
+	return 0;
 }
 
 int pthread_workqueue_init_np(void) {
-	int ret = -1; //should never be returned
 	pthread_mutex_lock(&_init_mutex);
 	pthread_t thread;
 	if(!_wq_configured) {
 		psem_init(&_job_semaphore, 0);
-		//FIXME: currently dequeues are asserted to not fail due to lack of memory.
-		_high_prio_job_queue 	= dequeue_new();
-		_default_prio_job_queue = dequeue_new();
-		_low_prio_job_queue		= dequeue_new();
+		if(_init_job_queues() != 0) {
+			goto out_bad;
+		}
 		if(pthread_create(&thread, NULL, _workqueue_worker, NULL) != 0) {
-			_free_workqueues();
-			ret = ENOMEM;
-			_wq_configured = 0;
+			_free_job_queues();
+			goto out_bad;
 		}
-		else {
-			_wq_configured = 1;
-			ret = 0;
-		}
+		_wq_configured = 1;
 	}
 	else {
-		ret = 0;
+		goto out_bad;
 	}
 	pthread_mutex_unlock(&_init_mutex);
-	return ret;
+	return 0;
+out_bad:
+	pthread_mutex_unlock(&_init_mutex);
+	_wq_configured = 0;
+	return ENOMEM;
 }
 
 int pthread_workqueue_create_np(pthread_workqueue_t *workqp, const pthread_workqueue_attr_t * attrp) {
@@ -164,7 +153,7 @@ int pthread_workqueue_create_np(pthread_workqueue_t *workqp, const pthread_workq
 }
 
 int pthread_workqueue_additem_np(pthread_workqueue_t workq, void *(*workitem_func)(void *), void * workitem_arg, pthread_workitem_handle_t * itemhandlep, unsigned int *gencountp) {
-	if(_is_valid_workqueue(&workq)) {
+	if(_is_valid_workqueue(&workq) &&_wq_configured) {
 		pthread_workitem_handle_t *new_job = calloc(1, sizeof(pthread_workitem_handle_t));
 		if(new_job == NULL) {
 			return ENOMEM;
@@ -178,8 +167,12 @@ int pthread_workqueue_additem_np(pthread_workqueue_t workq, void *(*workitem_fun
 			dequeue_append(queue, new_job); //check for success/failure (currently no such checks)
 			psem_up(&_job_semaphore);
 			pthread_mutex_unlock(&_job_queue_mutex);
-			*itemhandlep 	= *new_job; // FIXME: this is just a hack to feel like the spec.
-			*gencountp 		= 0; // FIXME: what the hell is this parameter anyway? Going to have to read the implimentations.
+			if(itemhandlep != NULL) {
+				*itemhandlep 	= *new_job; // FIXME: this is just a hack to feel like the spec.
+			}
+			if(gencountp != NULL) {
+				*gencountp 		= 0; // FIXME: what the hell is this parameter anyway? Going to have to read the implimentations.
+			}
 		}
 	}
 	else{

@@ -1,7 +1,7 @@
 #include "stdincludes.h"
 #include <pthread.h>
 #include "pthread_wq_np.h"
-#define _POSIX_C_SOURCE  199309L
+#define _POSIX_C_SOURCE  200000L
 #include <time.h>
 
 pthread_workqueue_t wq;
@@ -33,8 +33,6 @@ int main(void) {
 		*ip = i;
 		pthread_workqueue_additem_np(wq, the_function, ip, &handle, &gencount);
 		if((i%25) == 0) {
-			struct timespec t;
-			nanosleep(&t, 100000L);
 			sleep(1);
 		}
 	}
