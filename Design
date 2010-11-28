@@ -10,3 +10,5 @@ How are the threads managed? Is there a daemon thread that deals with all of thi
 What checks should the threads perform before and after running jobs. 
 Fairness?
 
+Problems:
+This doesn't allow us to figure out what to do with the "overcommit" flag. It is impossible to have per-queue granularity under the current model.
