@@ -44,3 +44,8 @@ void psem_down(psem_t *semaphore) {
 	}
 	pthread_mutex_unlock(&semaphore->lock);
 }
+
+int psem_peek(psem_t *semaphore) {
+	//returns the value in the semaphore. Because we cant use this for "real" decisions using this information anyway, we don't bother taking the lock.
+	return semaphore->counter;
+}
