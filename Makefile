@@ -34,3 +34,10 @@ libpthread_wq_np.so: pthread_wq_np.o dequeue.o psem.o
 .PHONY: clean
 clean:
 	rm -rf *.dSYM *.o *.so $(EXECUTABLES) 
+
+.PHONY: tar
+tar: clean
+	rm -rf pwq
+	mkdir pwq
+	cp *.c *.h Makefile AUTHORS README pwq/
+	tar -cvzf cs211-assign-5-cduyk1-jstump1.tar.gz pwq
