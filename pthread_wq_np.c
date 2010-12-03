@@ -17,7 +17,7 @@ static psem_t _job_semaphore;
 
 #define IS_VALID_QUEUE_PRIORITY(x) (((x) == WORKQ_HIGH_PRIOQUEUE) || ((x) == WORKQ_DEFAULT_PRIOQUEUE) || ((x) == WORKQ_LOW_PRIOQUEUE))
 
-const pthread_workqueue_attr_t _default_workqueue_attributes = {
+static const pthread_workqueue_attr_t _default_workqueue_attributes = {
 	.sig		= PTHREAD_WORKQUEUE_ATTR_T_SIG,
 	.priority 	= WORKQ_DEFAULT_PRIOQUEUE,
 	.overcommit = 0,
@@ -85,7 +85,10 @@ static void * _workqueue_worker(void *arg) {
 	return NULL;
 }
 
-
+static int _spawn_worker(void) {
+	pthread_t thread;
+	return pthread_create(&thread, NULL, _workqueue_worker, NULL);
+}
 static void _free_job_queues(void) {
 	dequeue_t * queue = NULL;
 	for(int i = 0; i < NUM_JOB_QUEUES; i++) {
@@ -109,13 +112,12 @@ static int _init_job_queues(void) {
 
 int pthread_workqueue_init_np(void) {
 	pthread_mutex_lock(&_init_mutex);
-	pthread_t thread;
 	if(!_wq_configured) {
 		psem_init(&_job_semaphore, 0);
 		if(_init_job_queues() != 0) {
 			goto out_bad;
 		}
-		if(pthread_create(&thread, NULL, _workqueue_worker, NULL) != 0) {
+		if(_spawn_worker() != 0) {
 			_free_job_queues();
 			goto out_bad;
 		}
