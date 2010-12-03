@@ -1,6 +1,7 @@
 //Charles Duyk
 //charles.duyk@gmail.com
-
+//John Stumpo
+//stump@jstump.com
 #ifndef DEQUEUE_H 
 #define DEQUEUE_H
 

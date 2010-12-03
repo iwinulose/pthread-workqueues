@@ -1,3 +1,7 @@
+//Charles Duyk
+//charles.duyk@gmail.com
+//John Stumpo
+//stump@jstump.com
 #include <stdlib.h>
 #include <pthread.h>
 #include <errno.h>

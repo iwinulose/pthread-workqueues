@@ -1,3 +1,8 @@
+//Charles Duyk
+//charles.duyk@gmail.com
+//John Stumpo
+//stump@jstump.com 
+
 //Portable counting semaphore
 typedef struct psem_s {
 	pthread_mutex_t lock;

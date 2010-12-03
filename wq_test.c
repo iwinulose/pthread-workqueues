@@ -1,3 +1,7 @@
+//Charles Duyk
+//charles.duyk@gmail.com
+//John Stumpo
+//stump@jstump.com
 #include "stdincludes.h"
 #include <pthread.h>
 #include "pthread_wq_np.h"

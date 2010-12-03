@@ -1,5 +1,7 @@
 //Charles Duyk
 //charles.duyk@gmail.com
+//John Stumpo
+//stump@jstump.com
 
 #ifndef STDINCLUDES_H
 #define NO_PRAGMAS

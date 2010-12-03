@@ -1,6 +1,7 @@
 //Charles Duyk
 //charles.duyk@gmail.com
-
+//John Stumpo
+//stump@jstump.com
 #include "stdincludes.h"
 #include "dequeue.h"
 #include "fastpath.h"

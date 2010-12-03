@@ -1,3 +1,8 @@
+//Charles Duyk
+//charles.duyk@gmail.com
+//John Stumpo
+//stump@jstump.com 
+
 #ifndef PTHREAD_WQ_NP_H
 #define PTHREAD_WQ_NP_H
 
