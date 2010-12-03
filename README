@@ -1,0 +1,6 @@
+Charles Duyk  -- charles.duyk@gmail.com
+John Stumpo -- stump@jstump.com
+
+README:
+
+To build, type 'make.' To run a program using the shared object, either add '.' to the environment variable LD_LIBRARY_PATH or move it to the system library path
