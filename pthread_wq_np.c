@@ -92,7 +92,6 @@ static void * _workqueue_worker(void *arg) {
 static int _spawn_worker(void) {
 	pthread_t thread;
 	num_workers++;
-	printf("spawning worker (%d)\n", num_workers);
 	return pthread_create(&thread, NULL, _workqueue_worker, NULL);
 }
 static void _free_job_queues(void) {
