@@ -175,10 +175,10 @@ int pthread_workqueue_additem_np(pthread_workqueue_t workq, void *(*workitem_fun
 			pthread_mutex_lock(&_job_queue_mutex);
 			dequeue_append(queue, new_job); //check for success/failure (currently no such checks)
 			psem_up(&_job_semaphore);
+			pthread_mutex_unlock(&_job_queue_mutex);
 			if(psem_peek(&_job_semaphore) >= 0) { //FIXME: we might and likely accidentally will spawn workers unintentinally here
 				_spawn_worker();
 			}
-			pthread_mutex_unlock(&_job_queue_mutex);
 			if(itemhandlep != NULL) {
 				*itemhandlep 	= *new_job; // FIXME: this is just a hack to feel like the spec.
 			}
