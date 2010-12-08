@@ -110,8 +110,12 @@ static void _free_job_queues(void) {
 	}
 }
 
+//Initializes the job queues. Returns 0 on success, nonzero otherwise. If _init_job_queues fails for any reason, it shall be as if it had never been called.
 static int _init_job_queues(void) {
 	//FIXME: currently dequeues are asserted to not fail due to lack of memory.
+	if(_wq_configured) {
+		return 1;
+	}
 	for(int i = 0; i < NUM_JOB_QUEUES; i++) {
 		if((_job_queues[i] = dequeue_new()) == NULL) {
 			_free_job_queues();
@@ -168,12 +172,14 @@ int pthread_workqueue_additem_np(pthread_workqueue_t workq, void *(*workitem_fun
 			return ENOMEM;
 		}
 		else {
+			//Because the attr was guaranteed to be valid (in _is_valid_workqueue), queue should never be NULL
+			dequeue_t *queue = _queue_for_priority(workq.attr.priority);
+			assert(queue != NULL);
 			new_job->workq = workq;
 			new_job->func = workitem_func;
 			new_job->arg = workitem_arg;
-			dequeue_t *queue = _queue_for_priority(workq.attr.priority);
 			pthread_mutex_lock(&_job_queue_mutex);
-			dequeue_append(queue, new_job); //check for success/failure (currently no such checks)
+			dequeue_append(queue, new_job); //FIXME: check for success/failure (currently no such checks)
 			psem_up(&_job_semaphore);
 			pthread_mutex_unlock(&_job_queue_mutex);
 			if(psem_peek(&_job_semaphore) >= 0) { //FIXME: we might and likely accidentally will spawn workers unintentinally here
@@ -183,7 +189,7 @@ int pthread_workqueue_additem_np(pthread_workqueue_t workq, void *(*workitem_fun
 				*itemhandlep 	= *new_job; // FIXME: this is just a hack to feel like the spec.
 			}
 			if(gencountp != NULL) {
-				*gencountp 		= 0; // FIXME: what the hell is this parameter anyway? Going to have to read the implimentations.
+				*gencountp 		= 0; // FIXME: In Apple's implimentation this is used to keep track of how many times a given workitem struct has been used.
 			}
 		}
 	}

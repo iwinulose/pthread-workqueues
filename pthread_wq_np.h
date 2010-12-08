@@ -8,8 +8,8 @@
 
 /* Work queue priority attributes. */
 #define	WORKQ_HIGH_PRIOQUEUE	0	/* Assign to high priority queue. */
-#define WORKQ_DEFAULT_PRIOQUEUE	2	/* Assign to default priority queue. */
-#define WORKQ_LOW_PRIOQUEUE		4	/* Assign to low priority queue. */
+#define WORKQ_DEFAULT_PRIOQUEUE	1	/* Assign to default priority queue. */
+#define WORKQ_LOW_PRIOQUEUE		2	/* Assign to low priority queue. */
 
 
 typedef struct pthread_workqueue_s pthread_workqueue_t;

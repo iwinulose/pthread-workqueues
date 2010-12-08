@@ -22,10 +22,10 @@ static void __free_node(void *context, list_node_t *node) {
 	(void) context; //shut up compiler
 	list_node_t *next = node->next;
 	list_node_t *prev = node->prev;
-	if(prev) {
+	if(prev != NULL) {
 		prev->next = next;
 	}
-	if(next) {
+	if(next != NULL) {
 		next->prev = prev;
 	}
 	node->data = NULL;
@@ -239,8 +239,3 @@ void dequeue_append(dequeue_t *list, void *data) {
 	}
 }
 
-//Here's the hack to work around the lack of lambdas:
-//static void list_apply_operator(dequeue_t *list, list_operator_f operator) {
-//	list->operator = operator;
-//	_list_node_apply_function(_list_first_node(list), _perform_list_operator, list->tail);
-//}
