@@ -19,7 +19,9 @@ static dequeue_t * _job_queues[NUM_JOB_QUEUES];
 static pthread_mutex_t _job_queue_mutex = PTHREAD_MUTEX_INITIALIZER;
 static psem_t _job_semaphore;
 static int num_workers = 0;
-#define IS_VALID_QUEUE_PRIORITY(x) (((x) == WORKQ_HIGH_PRIOQUEUE) || ((x) == WORKQ_DEFAULT_PRIOQUEUE) || ((x) == WORKQ_LOW_PRIOQUEUE))
+#define IS_VALID_QUEUE_PRIORITY(x) (((x) == WORKQ_HIGH_PRIOQUEUE) \
+										|| ((x) == WORKQ_DEFAULT_PRIOQUEUE) \
+										|| ((x) == WORKQ_LOW_PRIOQUEUE))
 
 static const pthread_workqueue_attr_t _default_workqueue_attributes = {
 	.sig		= PTHREAD_WORKQUEUE_ATTR_T_SIG,
@@ -91,9 +93,13 @@ static void * _workqueue_worker(void *arg) {
 
 static int _spawn_worker(void) {
 	pthread_t thread;
-	num_workers++;
-	return pthread_create(&thread, NULL, _workqueue_worker, NULL);
+	int ret = pthread_create(&thread, NULL, _workqueue_worker, NULL);
+	if (ret == 0) {
+		num_workers++;
+	}
+	return ret;
 }
+
 static void _free_job_queues(void) {
 	dequeue_t * queue = NULL;
 	for(int i = 0; i < NUM_JOB_QUEUES; i++) {
@@ -169,7 +175,7 @@ int pthread_workqueue_additem_np(pthread_workqueue_t workq, void *(*workitem_fun
 			pthread_mutex_lock(&_job_queue_mutex);
 			dequeue_append(queue, new_job); //check for success/failure (currently no such checks)
 			psem_up(&_job_semaphore);
-			if(psem_peek(&_job_semaphore) >= 0) {
+			if(psem_peek(&_job_semaphore) >= 0) { //FIXME: we might and likely accidentally will spawn workers unintentinally here
 				_spawn_worker();
 			}
 			pthread_mutex_unlock(&_job_queue_mutex);
@@ -193,9 +199,7 @@ int pthread_workqueue_attr_init_np(pthread_workqueue_attr_t *attr) {
 		ret = EINVAL;
 	}
 	else {
-		attr->sig = PTHREAD_WORKQUEUE_ATTR_T_SIG;
-		attr->priority = WORKQ_DEFAULT_PRIOQUEUE;
-		attr->overcommit = 0;
+		*attr = _default_workqueue_attributes;
 		ret = 0;
 	}
 	return ret;
