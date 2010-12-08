@@ -130,8 +130,8 @@ int pthread_workqueue_init_np(void) {
 	pthread_mutex_unlock(&_init_mutex);
 	return 0;
 out_bad:
-	pthread_mutex_unlock(&_init_mutex);
 	_wq_configured = 0;
+	pthread_mutex_unlock(&_init_mutex);
 	return ENOMEM;
 }
 
