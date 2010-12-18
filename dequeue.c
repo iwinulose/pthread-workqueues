@@ -159,13 +159,22 @@ static void _insert_node_after(dequeue_t *list, list_node_t *node, list_node_t *
 	_increment_list_size(list);
 }
 
-static void * _list_remove_node(dequeue_t *list, list_node_t *node) {
+static void * _list_remove_node_retain(dequeue_t *list, list_node_t *node, list_node_t **retain) {
 	assert(list->size > 0);
 	void * ret;
 	ret = node->data;
-	_free_node(node);
+	if(exists(retain)) {
+		*retain = node;
+	}
+	else {
+		_free_node(node);
+	}
 	_decrement_list_size(list);
 	return ret;
+}
+
+static void * _list_remove_node(dequeue_t *list, list_node_t *node) {
+	return _list_remove_node_retain(list, node, NULL);
 }
 
 #ifndef NO_PRAGMAS
@@ -314,7 +323,7 @@ int dequeue_push_node(dequeue_t *list, list_node_t *node, void *data) {
 	return ret;
 }
 
-int dequeue_append_node(dequeue_t *, list_node_t *, void *) {
+int dequeue_append_node(dequeue_t *list, list_node_t *node, void *data) {
 	int ret = EINVAL;
 	if(exists_fast(list)) {
 		if(exists_fast(node)) {
@@ -327,6 +336,23 @@ int dequeue_append_node(dequeue_t *, list_node_t *, void *) {
 }
 
 void * dequeue_pop_node(dequeue_t *list, list_node_t **nodep) {
+	void * data = NULL;
+	if(exists_fast(list)) {
+		list_node_t *node = _list_first_node(list);
+		if(exists(node)) {
+			data = _list_remove_node_retain(list, node, nodep);
+		}
+	}
+	return data;
 }
-void * dequeue_pop_tail_node(dequeue_t *, list_node_t **nodep) {
+
+void * dequeue_pop_tail_node(dequeue_t *list, list_node_t **nodep) {
+	void * data = NULL;
+	if(exists_fast(list)) {
+		list_node_t *node = _list_last_node(list);
+		if(exists(node)) {
+			data = _list_remove_node_retain(list, node, nodep);
+		}
+	}
+	return data;
 }
