@@ -22,3 +22,14 @@ Makefile.in
 missing
 *.so
 stamp-h1
+dequeue.o
+psem.o
+pthread_wq_np.o
+queue_test
+queue_test-dequeue.o
+queue_test-queue_test.o
+sem_test
+sem_test-psem.o
+sem_test-sem_test.o
+wq_test
+wq_test-wq_test.o
