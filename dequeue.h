@@ -52,7 +52,14 @@ void *		dequeue_head(dequeue_t *);
 void *		dequeue_tail(dequeue_t *);
 void *		dequeue_pop(dequeue_t *);
 void *		dequeue_pop_tail(dequeue_t *);
-void		dequeue_push(dequeue_t *, void *);
-void		dequeue_append(dequeue_t *, void *);
+int			dequeue_push(dequeue_t *, void *);
+int			dequeue_append(dequeue_t *, void *);
 
+//two stage allocation
+list_node_t * dequeue_node(void);
+void		dequeue_node_free(list_node_t *);
+int			dequeue_push_node(dequeue_t *, list_node_t *, void *);
+int 		dequeue_append_node(dequeue_t *, list_node_t *, void *);
+void *		dequeue_pop_node(dequeue_t *, list_node_t **);
+void *		dequeue_pop_tail_node(dequeue_t *, list_node_t **);
 #endif /*DEQUEUE_H*/

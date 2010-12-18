@@ -28,6 +28,7 @@
  */
 
 #include "stdincludes.h"
+#include "errno.h"
 #include "dequeue.h"
 #include "fastpath.h"
 #ifndef NO_PRAGMAS
@@ -71,9 +72,15 @@ static list_node_t * _get_free_node(void) {
 	return ret;
 }
 
+static void _package_data_node(list_node_t *node, void *data) {
+	node->data = data;
+}
+
 static list_node_t * _package_data(void *data) {
 	list_node_t *new_node = _get_free_node();
-	new_node->data = data;
+	if(exists_fast(new_node)) {
+		_package_data_node(new_node, data);
+	}
 	return new_node;
 }
 
@@ -226,7 +233,6 @@ void * dequeue_tail(dequeue_t *list) {
 
 //returns the data associated with the first node of the list and removes that node from the list. Returns NULL if the list was previously empty.
 void * dequeue_pop(dequeue_t *list) { 
-	//there is some code repitition here, but I think this is cleanest way to express this.  
 	void * ret = NULL;
 	if(exists_fast(list)) {
 		list_node_t *node = _list_first_node(list);
@@ -249,18 +255,78 @@ void * dequeue_pop_tail(dequeue_t *list) {
 }
 
 //places this data in a new node at the front of the list.
-void dequeue_push(dequeue_t *list, void *data) {
+//returns
+//	0 on success
+//	EINVAL if the list is invalid
+//	ENOMEM if there was not enough memory
+int dequeue_push(dequeue_t *list, void *data) {
+	int ret = EINVAL;
 	if(exists_fast(list)) {
 		list_node_t *node = _package_data(data);
-		_insert_node_after(list, node, list->head);
+		if(exists_fast(node)) {
+			_insert_node_after(list, node, list->head);
+			ret = 0;
+		}
+		else {
+			ret = ENOMEM;
+		}
 	}
+	return ret;
 }
 
 //places this data in a new node at the end of the list
-void dequeue_append(dequeue_t *list, void *data) {
+//returns 
+//	0 on success
+//	EINVAL if the list is invalid 
+// 	ENOMEM if there was not enough memory
+int dequeue_append(dequeue_t *list, void *data) {
+	int ret = EINVAL;
 	if(exists_fast(list)) {
 		list_node_t *node = _package_data(data);
-		_insert_node_before(list, node, list->tail);
+		if(exists_fast(node)) {
+			_insert_node_before(list, node, list->tail);
+			ret = 0;
+		}
+		else {
+			ret = ENOMEM;
+		}
 	}
+	return ret;
 }
 
+list_node_t * dequeue_node(void) {
+	return _get_free_node();
+}
+
+void dequeue_node_free(list_node_t *node) {
+	_free_node(node);
+}
+
+int dequeue_push_node(dequeue_t *list, list_node_t *node, void *data) {
+	int ret = EINVAL;
+	if(exists_fast(list)) {
+		if(exists_fast(node)) {
+			_package_data_node(node, data);
+			_insert_node_after(list, node, list->head);
+			ret = 0;
+		}
+	}
+	return ret;
+}
+
+int dequeue_append_node(dequeue_t *, list_node_t *, void *) {
+	int ret = EINVAL;
+	if(exists_fast(list)) {
+		if(exists_fast(node)) {
+			_package_data_node(node, data);
+			_insert_node_before(list, node, list->tail);
+			ret = 0;
+		}
+	}
+	return ret;
+}
+
+void * dequeue_pop_node(dequeue_t *list, list_node_t **nodep) {
+}
+void * dequeue_pop_tail_node(dequeue_t *, list_node_t **nodep) {
+}
