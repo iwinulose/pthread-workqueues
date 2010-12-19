@@ -53,7 +53,7 @@ static void _unlink_node(list_node_t *node) {
 	if(next != NULL) {
 		next->prev = prev;
 	}
-	node->data = NULL;
+	memset(node, 0, sizeof(list_node_t));
 }
 
 static void __free_node(void *context, list_node_t *node) {
