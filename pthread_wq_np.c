@@ -98,9 +98,10 @@ static void * _workqueue_worker(void *arg) {
 	while(running) {
 		psem_down(&_job_semaphore);
 		pthread_workitem_handle_t *job = NULL;
+		list_node_t *node = NULL;
 		pthread_mutex_lock(&_job_queue_mutex);
 		for(int i = 0; i < NUM_JOB_QUEUES; i++) {
-			job = dequeue_pop(_job_queues[i]);
+			job = dequeue_pop_node(_job_queues[i], &node);
 			if(job != NULL) {
 				break;
 			}
@@ -203,8 +204,13 @@ int pthread_workqueue_additem_np(pthread_workqueue_t workq, void *(*workitem_fun
 			new_job->workq = workq;
 			new_job->func = workitem_func;
 			new_job->arg = workitem_arg;
+			list_node_t *node = dequeue_node();
+			if(node == NULL) {
+				free(new_job);
+				return ENOMEM;
+			}
 			pthread_mutex_lock(&_job_queue_mutex);
-			dequeue_append(queue, new_job); //FIXME: check for success/failure (currently no such checks)
+			dequeue_append_node(queue, new_job, node); //FIXME: check for success/failure (currently no such checks)
 			psem_up(&_job_semaphore);
 			pthread_mutex_unlock(&_job_queue_mutex);
 			if(psem_peek(&_job_semaphore) >= 0) { //FIXME: we might and likely accidentally will spawn workers unintentinally here
