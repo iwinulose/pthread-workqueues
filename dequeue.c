@@ -44,8 +44,7 @@ static void _list_node_apply_function(list_node_t *, list_node_function, void * 
 
 //FIXME: figure out what to do about error reporting (can't have a workqueue fail an assert and kill a client application)
 
-static void __free_node(void *context, list_node_t *node) {
-	(void) context; //shut up compiler
+static void _unlink_node(list_node_t *node) {
 	list_node_t *next = node->next;
 	list_node_t *prev = node->prev;
 	if(prev != NULL) {
@@ -55,6 +54,11 @@ static void __free_node(void *context, list_node_t *node) {
 		next->prev = prev;
 	}
 	node->data = NULL;
+}
+
+static void __free_node(void *context, list_node_t *node) {
+	(void) context; //shut up compiler
+	_unlink_node(node);
 	free(node);
 }
 
@@ -164,6 +168,7 @@ static void * _list_remove_node_retain(dequeue_t *list, list_node_t *node, list_
 	void * ret;
 	ret = node->data;
 	if(exists(retain)) {
+		_unlink_node(node);
 		*retain = node;
 	}
 	else {
