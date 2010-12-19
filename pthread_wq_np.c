@@ -210,7 +210,7 @@ int pthread_workqueue_additem_np(pthread_workqueue_t workq, void *(*workitem_fun
 				return ENOMEM;
 			}
 			pthread_mutex_lock(&_job_queue_mutex);
-			dequeue_append_node(queue, new_job, node); //FIXME: check for success/failure (currently no such checks)
+			dequeue_append_node(queue, node, new_job); //FIXME: check for success/failure (currently no such checks)
 			psem_up(&_job_semaphore);
 			pthread_mutex_unlock(&_job_queue_mutex);
 			if(psem_peek(&_job_semaphore) >= 0) { //FIXME: we might and likely accidentally will spawn workers unintentinally here

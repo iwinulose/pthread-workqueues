@@ -53,7 +53,8 @@ static void _unlink_node(list_node_t *node) {
 	if(next != NULL) {
 		next->prev = prev;
 	}
-	memset(node, 0, sizeof(list_node_t));
+	node->next = NULL;
+	node->prev = NULL;
 }
 
 static void __free_node(void *context, list_node_t *node) {
@@ -165,8 +166,7 @@ static void _insert_node_after(dequeue_t *list, list_node_t *node, list_node_t *
 
 static void * _list_remove_node_retain(dequeue_t *list, list_node_t *node, list_node_t **retain) {
 	assert(list->size > 0);
-	void * ret;
-	ret = node->data;
+	void * ret = node->data;
 	if(exists(retain)) {
 		_unlink_node(node);
 		*retain = node;
