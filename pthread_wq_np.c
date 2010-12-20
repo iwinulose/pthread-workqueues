@@ -174,7 +174,7 @@ int pthread_workqueue_create_np(pthread_workqueue_t *workqp, const pthread_workq
 	}
 	pthread_workqueue_attr_t attr;
 	if(attrp != NULL) {
-		if(!_is_valid_attr(attrp)) {
+		if(!_is_valid_attr((pthread_workqueue_attr_t *)attrp)) {
 			return EINVAL;
 		}
 		attr = *attrp;
@@ -232,26 +232,25 @@ int pthread_workqueue_additem_np(pthread_workqueue_t workq, void *(*workitem_fun
 	return 0;
 }
 
-int pthread_workqueue_attr_init_np(pthread_workqueue_attr_t *attr) {
+int pthread_workqueue_attr_init_np(pthread_workqueue_attr_t *attrp) {
 	int ret = -1;
-	if(attr == NULL) {
+	if(attrp == NULL) {
 		ret = EINVAL;
 	}
 	else {
-		*attr = _default_workqueue_attributes;
+		*attrp = _default_workqueue_attributes;
 		ret = 0;
 	}
 	return ret;
 }
 
-int pthread_workqueue_attr_destroy_np(pthread_workqueue_attr_t *attr) {
-	(void) attr;
-	return 0;
+int pthread_workqueue_attr_destroy_np(pthread_workqueue_attr_t *attrp) {
+	return _is_valid_attr(attrp) ? 0 : EINVAL;
 }
 
-int pthread_workqueue_attr_getovercommit_np(pthread_workqueue_attr_t *attr, int *ocommp) {
+int pthread_workqueue_attr_getovercommit_np(pthread_workqueue_attr_t *attrp, int *ocommp) {
 	int ret = -1;
-	if(!_is_valid_attr(attr) || ocommp == NULL) {
+	if(!_is_valid_attr(attrp) || ocommp == NULL) {
 		ret = EINVAL;
 	}
 	else {
@@ -260,10 +259,10 @@ int pthread_workqueue_attr_getovercommit_np(pthread_workqueue_attr_t *attr, int 
 	return ret;
 }
 
-int pthread_workqueue_attr_setovercommit_np(pthread_workqueue_attr_t *attr, int ocomm) {
+int pthread_workqueue_attr_setovercommit_np(pthread_workqueue_attr_t *attrp, int ocomm) {
 	int ret = EINVAL;
-	if(_is_valid_attr(attr)) {
-		attr->overcommit = ocomm;
+	if(_is_valid_attr(attrp)) {
+		attrp->overcommit = ocomm;
 		ret = 0;
 	}
 	return ret;
@@ -281,10 +280,10 @@ int pthread_workqueue_attr_getqueuepriority_np(pthread_workqueue_attr_t *attr, i
 	return ret;
 }
 
-int pthread_workqueue_attr_setqueuepriority_np(pthread_workqueue_attr_t *attr, int qprio) {
+int pthread_workqueue_attr_setqueuepriority_np(pthread_workqueue_attr_t *attrp, int qprio) {
 	int ret = -1;
-	if(_is_valid_attr(attr) && IS_VALID_QUEUE_PRIORITY(qprio)) {
-		attr->priority = qprio;
+	if(_is_valid_attr(attrp) && IS_VALID_QUEUE_PRIORITY(qprio)) {
+		attrp->priority = qprio;
 		ret = 0;
 	}
 	else {

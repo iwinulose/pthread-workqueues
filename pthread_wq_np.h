@@ -61,7 +61,7 @@ struct pthread_workitem_handle_s {
 int pthread_workqueue_init_np(void);
 
 /*
-	Creates a new work queue with the attributes specified by attr. If attr is NULL, the default attributes are used. The new work queue's handle is returned in workqp. If an invocation of pthread_workqueeu_create_np fails, the value which results in workqp is unspecified.
+	Creates a new work queue with the attributes specified by attr. If attr is NULL, the default attributes are used. The new work queue's handle is returned in workqp. If an invocation of pthread_workqueue_create_np fails, the value which results in workqp is unspecified.
 	
 	Returns
 		0:		Success
@@ -83,31 +83,54 @@ int pthread_workqueue_additem_np(pthread_workqueue_t workq, void *(*workitem_fun
 /*
 	Initializes the pthread_workqueue_attr_t with the default attributes.
 	
-	ENOMEM:	There was insufficient memory
+	Returns:
+		0:		Success
+		ENOMEM:	There was insufficient memory
 */
-int pthread_workqueue_attr_init_np(pthread_workqueue_attr_t *attr);
+int pthread_workqueue_attr_init_np(pthread_workqueue_attr_t *attrp);
 
 /*
-	
+	Destroys the attribute pointed to by attrp, freeing any dynamically allocated memory associated with it.
+
+	Returns:
+		0:		Success
+		EINVAL:	attrp did not point to a valid pthread_workqueue_attr_t
 */
-int pthread_workqueue_attr_destroy_np(pthread_workqueue_attr_t *attr);
+int pthread_workqueue_attr_destroy_np(pthread_workqueue_attr_t *attrp);
 
 /*
+	If the workqueue is overcommitted, the value pointed to by ocommp will be nonzero. If a workqueue is overcommitted, threads will be created to satisfy jobs enqueued on that workqueue regardless of system load. 
 
+	Returns:
+		0:		Success
+		EINVAL:	attrp did not point to a valid pthread_workqueue_attr_t, or ocommp was NULL
 */ 
-int pthread_workqueue_attr_getovercommit_np(pthread_workqueue_attr_t *attr, int *ocommp);
+int pthread_workqueue_attr_getovercommit_np(pthread_workqueue_attr_t *attrp, int *ocommp);
 
 /*
+	Sets whether or not workqueues created using the attribute specified by attrp should be overcommitted. Passing any nonzero value in ocomm will specify overcommitted workqueues. 
 
+	Returns:
+		0:		Success
+		EINVAL:	attrp did not point to a valid pthread_workqueue_attr_t
 */
-int pthread_workqueue_attr_setovercommit_np(pthread_workqueue_attr_t *attr, int ocomm);
+int pthread_workqueue_attr_setovercommit_np(pthread_workqueue_attr_t *attrp, int ocomm);
 
 /*
+	Returns the queue priority specified by the pthread_workqueue_attr_t pointed to by attrp in qpriop.
 
+	Returns:
+		0: 		Success
+		EINVAL:	attrp did not point to a valid pthread_workqueue_attr_t, or qpriop was NULL
 */
 int pthread_workqueue_attr_getqueuepriority_np(pthread_workqueue_attr_t *attr, int *qpriop);
 
 /*
+	Sets the queue priority specified by the pthread_workqueue_attr_t pointed to by attrp to qpriop.
+
+	Returns:
+		0: 		Success
+		EINVAL:	attrp did not point to a valid pthread_workqueue_attr_t, or qpriop was not a valid value
 
 */
 int pthread_workqueue_attr_setqueuepriority_np(pthread_workqueue_attr_t *attr, int qprio);
