@@ -71,15 +71,15 @@ static int _is_valid_attr(pthread_workqueue_attr_t *attr) {
 	return ret;
 }
 
-static int _is_valid_workqueue(pthread_workqueue_t *workqueue) {
+static int _is_valid_workqueue(wq_t *wq) {
 	int ret = 0;
-	if(workqueue == NULL) {
+	if(wq == NULL) {
 		ret = 0;
 	}
-	else if(workqueue->sig != PTHREAD_WORKQUEUE_T_SIG) {
+	else if(wq->sig != PTHREAD_WORKQUEUE_T_SIG) {
 		ret = 0;
 	}
-	else if(!_is_valid_attr(&workqueue->attr)) {
+	else if(!_is_valid_attr(&wq->attr)) {
 		ret = 0;
 	}
 	else{
@@ -131,7 +131,7 @@ static void _free_job_queues(void) {
 	for(int i = 0; i < NUM_JOB_QUEUES; i++) {
 		queue = _job_queues[i];
 		if(queue != NULL) {
-			free(queue);
+			dequeue_free(queue);
 		}
 	}
 }
@@ -160,9 +160,6 @@ int pthread_workqueue_init_np(void) {
 		}
 		_wq_configured = 1;
 	}
-	else {
-		goto out_bad;
-	}
 	pthread_mutex_unlock(&_init_mutex);
 	return 0;
 out_bad:
@@ -172,34 +169,39 @@ out_bad:
 }
 
 int pthread_workqueue_create_np(pthread_workqueue_t *workqp, const pthread_workqueue_attr_t * attrp) {
-	int ret = -1;
+	if(workqp == NULL) {
+		return EINVAL;
+	}
 	pthread_workqueue_attr_t attr;
-	if(workqp != NULL) {
-		if(attrp != NULL) {
-			attr = *attrp;
+	if(attrp != NULL) {
+		if(!_is_valid_attr(attrp)) {
+			return EINVAL;
 		}
-		else {
-			attr = _default_workqueue_attributes;
-		}
-		workqp->sig = PTHREAD_WORKQUEUE_T_SIG;
-		workqp->attr = attr;
-		ret = 0;
+		attr = *attrp;
 	}
 	else {
-		ret = EINVAL;
+		attr = _default_workqueue_attributes;
 	}
-	return ret;
+	wq_t *wq = calloc(1, sizeof(wq_t));
+	if(wq == NULL) {
+		return ENOMEM;
+	}
+	wq->sig = PTHREAD_WORKQUEUE_T_SIG;
+	wq->attr = attr;
+	*workqp = (pthread_workqueue_t) wq;
+	return 0;
 }
 
 int pthread_workqueue_additem_np(pthread_workqueue_t workq, void *(*workitem_func)(void *), void * workitem_arg, pthread_workitem_handle_t * itemhandlep, unsigned int *gencountp) {
-	if(_is_valid_workqueue(&workq) &&_wq_configured) {
+	wq_t *wq = (wq_t *) workq;
+	if(_is_valid_workqueue(wq) &&_wq_configured) {
 		pthread_workitem_handle_t *new_job = calloc(1, sizeof(pthread_workitem_handle_t));
 		if(new_job == NULL) {
 			return ENOMEM;
 		}
 		else {
 			//Because the attr was guaranteed to be valid (in _is_valid_workqueue), queue should never be NULL
-			dequeue_t *queue = _queue_for_priority(workq.attr.priority);
+			dequeue_t *queue = _queue_for_priority(wq->attr.priority);
 			assert(queue != NULL);
 			new_job->workq = workq;
 			new_job->func = workitem_func;

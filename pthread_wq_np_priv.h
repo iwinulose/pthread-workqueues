@@ -37,6 +37,11 @@
 
 typedef void * (*workitem_f)(void*);
 
+typedef struct wq_s {
+	unsigned int sig;
+	pthread_workqueue_attr_t attr;
+} wq_t;
+
 #define PTHREAD_WORKQUEUE_T_SIG 0xffefa231
 #define PTHREAD_WORKQUEUE_ATTR_T_SIG 0xef0c1f2f
 
