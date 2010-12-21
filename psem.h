@@ -41,5 +41,6 @@ psem_t *psem_new(int);
 void psem_free(psem_t *);
 void psem_up(psem_t *);
 void psem_down(psem_t *);
+int psem_down_timed(psem_t *, struct timeval *);
 int psem_peek(psem_t *);
 #endif /* PSEM_H */
