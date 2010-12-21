@@ -64,6 +64,7 @@ int mutual_post_test(void) {
 			sleep(1);
 		}
 	}
+	while(1);
 	return 0;
 }
 
