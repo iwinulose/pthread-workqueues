@@ -4,11 +4,10 @@ A pool of threads waits on the job queue semaphore. They may wake up at times ev
 
 Things still unknown:
 What goes in the structures
-How are the threads managed? Is there a daemon thread that deals with all of this?
-	Could be done by adding special jobs--perhaps to a special queue or just into one of the pre-defined queues--to kill/create threads? Still a chicken/egg problem, but no reason the first call to pthread_init can't seed the pool. Kinda a circular way to do something which could be done directly--especially adding threads. But removal is kinda cute (though if a system is already choked, killing a worker by enqueing it into a queue means that it may not die for a long time.)
 	Another idea: threads are directly added to the threadpool by a daemon thread, but removal is done by setting a counter. Threads check this counter either periodically when waiting for work or when exiting from a job or both. If the counter is non-zero, the thread decrements it and dies. Care must be taken to not kill everybody. 
 What checks should the threads perform before and after running jobs. 
 Fairness?
 
 Problems:
 This doesn't allow us to figure out what to do with the "overcommit" flag. It is impossible to have per-queue granularity under the current model.
+
