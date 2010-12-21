@@ -75,6 +75,9 @@ int psem_down_timed(psem_t *semaphore, struct timeval *time) {
 	pthread_mutex_lock(&semaphore->lock);
 	if(--(semaphore->counter) < 0) {
 		ret = pthread_cond_timedwait(&semaphore->condvar, &semaphore->lock, time); 
+		if(ret == ETIMEDOUT) {
+			++(semaphore->counter);
+		}
 	}
 	pthread_mutex_unlock(&semaphore->lock);
 	return ret;
