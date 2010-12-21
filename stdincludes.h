@@ -28,8 +28,7 @@
  */
 
 #ifndef STDINCLUDES_H
-#define NO_PRAGMAS
-#ifndef NO_PRAGMAS
+#if 0
 #pragma mark Standard includes
 #endif
 #define STDINCLUDES_H
@@ -48,7 +47,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#ifndef NO_PRAGMAS
+#if 0
 #pragma mark -
 #pragma mark Standard Defines
 #endif

@@ -70,6 +70,16 @@ void psem_down(psem_t *semaphore) {
 	pthread_mutex_unlock(&semaphore->lock);
 }
 
+int psem_down_timed(psem_t *semaphore, struct timeval *time) {
+	int ret = 0;
+	pthread_mutex_lock(&semaphore->lock);
+	if(--(semaphore->counter) < 0) {
+		ret = pthread_cond_timedwait(&semaphore->condvar, &semaphore->lock, time); 
+	}
+	pthread_mutex_unlock(&semaphore->lock);
+	return ret;
+}
+
 int psem_peek(psem_t *semaphore) {
 	pthread_mutex_lock(&semaphore->lock);
 	int ret = semaphore->counter;
