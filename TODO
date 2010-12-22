@@ -1,3 +1,4 @@
 Fix build process to not export extra symbols in library
 Change enqueueing system to enqueue by-workqueue
 Kill threads once they're started
+Better tests
