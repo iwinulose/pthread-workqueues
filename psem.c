@@ -51,6 +51,9 @@ psem_t * psem_new(int value) {
 }
 
 void psem_free(psem_t *semaphore) {
+	//FIXME error checking (.........)
+	pthread_mutex_destroy(&semaphore->lock);
+	pthread_cond_destroy(&semaphore->condvar);
 	free(semaphore);
 }
 
@@ -62,30 +65,46 @@ void psem_up(psem_t *semaphore) {
 	pthread_mutex_unlock(&semaphore->lock);
 }
 
-void psem_down(psem_t *semaphore) {
+int psem_down(psem_t *semaphore) {
+	int ret = 0;
 	pthread_mutex_lock(&semaphore->lock);
 	if(--(semaphore->counter) < 0) {
-		pthread_cond_wait(&semaphore->condvar, &semaphore->lock); 
+		ret = pthread_cond_wait(&semaphore->condvar, &semaphore->lock); 
+	}
+	if(ret != 0) {
+		++(semaphore->counter);
 	}
 	pthread_mutex_unlock(&semaphore->lock);
+	return ret;
 }
 
-int psem_down_timed(psem_t *semaphore, struct timeval *time) {
+int psem_down_timed_callout(psem_t *semaphore, const struct timespec *time, void (*atomic_callout)(int did_time_out, void *arg), void *arg) {
 	int ret = 0;
 	pthread_mutex_lock(&semaphore->lock);
 	if(--(semaphore->counter) < 0) {
 		ret = pthread_cond_timedwait(&semaphore->condvar, &semaphore->lock, time); 
-		if(ret == ETIMEDOUT) {
+		if(ret != 0) {
 			++(semaphore->counter);
+		}
+		if(atomic_callout != NULL) {
+			atomic_callout(ret, arg);
 		}
 	}
 	pthread_mutex_unlock(&semaphore->lock);
 	return ret;
 }
 
+int psem_down_timed(psem_t *semaphore, const struct timespec *time) {
+	return psem_down_timed_callout(semaphore, time, NULL, NULL);
+}
+
+int psem_peek_unlocked(psem_t *semaphore) {
+	return semaphore->counter;
+}
+
 int psem_peek(psem_t *semaphore) {
 	pthread_mutex_lock(&semaphore->lock);
-	int ret = semaphore->counter;
+	int ret = psem_peek_unlocked(semaphore);
 	pthread_mutex_unlock(&semaphore->lock);
 	return ret;
 }

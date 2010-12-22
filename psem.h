@@ -40,7 +40,9 @@ void psem_init(psem_t *, int);
 psem_t *psem_new(int);
 void psem_free(psem_t *);
 void psem_up(psem_t *);
-void psem_down(psem_t *);
-int psem_down_timed(psem_t *, struct timeval *);
+int psem_down(psem_t *);
+int psem_down_timed(psem_t *, const struct timespec *);
+int psem_down_timed_callout(psem_t *semaphore, const struct timespec *time, void (*atomic_callout)(int did_time_out, void *arg), void *arg);
 int psem_peek(psem_t *);
+int psem_peek_unlocked(psem_t *semaphore);
 #endif /* PSEM_H */
