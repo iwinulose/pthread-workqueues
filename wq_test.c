@@ -55,16 +55,18 @@ static void * the_function(void *arg) {
 int mutual_post_test(void) {
 	pthread_workitem_handle_t handle;
 	unsigned int gencount;
+loop:
 	for(int i = 0; i < 50; i++) {
 		printf("Inserting %d gen\n", i);
 		int *ip = malloc(sizeof(int));
 		*ip = i;
 		pthread_workqueue_additem_np(wq, the_function, ip, &handle, &gencount);
 		if((i%25) == 0) {
-			sleep(1);
+			sleep(2);
 		}
 	}
-	while(1);
+	sleep(10);
+	goto loop;
 	return 0;
 }
 
