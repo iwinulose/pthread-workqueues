@@ -33,6 +33,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <pthread.h>
+#include <sys/time.h>
 #include "pthread_wq_np.h"
 #include "pthread_wq_np_priv.h"
 #include "dequeue.h"
@@ -47,6 +48,7 @@ static int num_workers = 0;
 #define IS_VALID_QUEUE_PRIORITY(x) (((x) == WORKQ_HIGH_PRIOQUEUE) \
 										|| ((x) == WORKQ_DEFAULT_PRIOQUEUE) \
 										|| ((x) == WORKQ_LOW_PRIOQUEUE))
+#define WORKER_TIMEOUT 3 
 
 static const pthread_workqueue_attr_t _default_workqueue_attributes = {
 	.sig		= PTHREAD_WORKQUEUE_ATTR_T_SIG,
@@ -92,26 +94,44 @@ static dequeue_t * _queue_for_priority(int priority) {
 	return IS_VALID_QUEUE_PRIORITY(priority) ? _job_queues[priority] : NULL;
 }
 
+static void _worker_callout(int did_timeout, void * arg) {
+	int *ip = (int *) arg;
+	if(did_timeout == ETIMEDOUT) {
+		*ip= *ip+ 1;
+		printf("WORKER TIMED OUT %d times\n", *ip);
+	}
+}
+
 static void * _workqueue_worker(void *arg) {
 	(void) arg;
 	int running = 1;
+	int num_noop_wakeups = 0;
+	int error = 0;
+	struct timeval tv;
+	struct timespec ts;
+	ts.tv_nsec = 0;
 	while(running) {
-		psem_down(&_job_semaphore);
-		pthread_workitem_handle_t *job = NULL;
-		list_node_t *node = NULL;
-		pthread_mutex_lock(&_job_queue_mutex);
-		for(int i = 0; i < NUM_JOB_QUEUES; i++) {
-			job = dequeue_pop_node(_job_queues[i], &node);
-			if(job != NULL) {
-				break;
+		gettimeofday(&tv, NULL);
+		ts.tv_sec = tv.tv_sec + WORKER_TIMEOUT;
+		error = psem_down_timed_callout(&_job_semaphore, &ts, _worker_callout, &num_noop_wakeups);
+		if(error == 0) { 
+			num_noop_wakeups = 0;
+			pthread_workitem_handle_t *job = NULL;
+			list_node_t *node = NULL;
+			pthread_mutex_lock(&_job_queue_mutex);
+			for(int i = 0; i < NUM_JOB_QUEUES; i++) {
+				job = dequeue_pop_node(_job_queues[i], &node);
+				if(job != NULL) {
+					break;
+				}
 			}
-		}
-		pthread_mutex_unlock(&_job_queue_mutex);
-		if(job != NULL) {
-			workitem_f func = job->func;
-			void * arg		= job->arg;
-			func(arg);
-			free(job);
+			pthread_mutex_unlock(&_job_queue_mutex);
+			if(job != NULL) {
+				workitem_f func = job->func;
+				void * arg		= job->arg;
+				func(arg);
+				free(job);
+			}
 		}
 	}
 	return NULL;
@@ -194,7 +214,7 @@ int pthread_workqueue_create_np(pthread_workqueue_t *workqp, const pthread_workq
 
 int pthread_workqueue_additem_np(pthread_workqueue_t workq, void *(*workitem_func)(void *), void * workitem_arg, pthread_workitem_handle_t * itemhandlep, unsigned int *gencountp) {
 	wq_t *wq = (wq_t *) workq;
-	if(_is_valid_workqueue(wq) &&_wq_configured) {
+	if(_is_valid_workqueue(wq) && _wq_configured) {
 		pthread_workitem_handle_t *new_job = calloc(1, sizeof(pthread_workitem_handle_t));
 		if(new_job == NULL) {
 			return ENOMEM;
@@ -219,10 +239,10 @@ int pthread_workqueue_additem_np(pthread_workqueue_t workq, void *(*workitem_fun
 				_spawn_worker();
 			}
 			if(itemhandlep != NULL) {
-				*itemhandlep 	= *new_job; // FIXME: this is just a hack to feel like the spec.
+				*itemhandlep 	= *new_job; //FIXME: this is just a hack to feel like the spec.
 			}
 			if(gencountp != NULL) {
-				*gencountp 		= 0; // FIXME: In Apple's implimentation this is used to keep track of how many times a given workitem struct has been used.
+				*gencountp 		= 0; //FIXME: In Apple's implimentation this is used to keep track of how many times a given workitem struct has been used.
 			}
 		}
 	}
